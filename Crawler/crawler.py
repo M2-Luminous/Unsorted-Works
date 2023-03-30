@@ -17,7 +17,7 @@ def scrape_car_reviews(manufacturer, model, year):
 
     # Send a request to the URL and get the response
     response = requests.get(url)
-    # Status Checking
+    # Status Checking (Can deleted)
     if response.status_code != 200:
         print(f"Error: Request failed with status code {response.status_code}")
         return
@@ -38,21 +38,21 @@ def scrape_car_reviews(manufacturer, model, year):
         ###########################################################################
         
         # Find the author of the review
-        author_date = container.find(class_="review-card-header__byline").text.strip()
+        author_data = container.find(class_="review-card-header__byline").text.strip()
 
         # Find regular expression pattern and search for match string
         author_regex = re.compile(r"By (.+?) on")
-        author_match = author_regex.search(author_date)
+        author_match = author_regex.search(author_data)
         author = author_match.group(1)
 
         ##########################################################################
 
         # Find the date of the review
-        date_date = container.find(class_="review-card-header__date").text.strip()
+        date_data = container.find(class_="review-card-header__date").text.strip()               # maybe use author_data
 
         # Find regular expression pattern and search for match string
         date_regex = re.compile(r"on (.+)$")
-        date_match = date_regex.search(date_date)
+        date_match = date_regex.search(date_data)
         date = date_match.group(1)
 
         ##########################################################################
@@ -74,6 +74,7 @@ def scrape_car_reviews(manufacturer, model, year):
     with open(f"{manufacturer}_{model}_{year}_reviews.csv", "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=["Title", "Author", "Date", "Content"])
         writer.writeheader()
+        # writer = csv.writer(csvfile)
         writer.writerows(review_data)
 
         #writer.writerow([title, author, date, content])
