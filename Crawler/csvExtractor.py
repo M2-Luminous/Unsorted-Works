@@ -26,11 +26,11 @@ def crawler(csv_file):
                 author = comment.find('div', {'class': 'comment-author'}).text.strip()
                 comments.append({'text': text, 'rating': rating, 'author': author})
 
-            # extract the author name from the page, if available
+            
             author = soup.find('div', {'class': 'author'}).text.strip() if soup.find('div', {'class': 'author'}) else ''
 
             # save the results to a file or database
-            # ...
+            
 
 if __name__ == '__main__':
     csv_file = 'car_urls.csv'
