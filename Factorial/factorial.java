@@ -1,4 +1,4 @@
-public class Factorial {
+public class factorial {
     public static long calculateFactorial(int n) {
         if (n < 0) {
             throw new IllegalArgumentException("Factorial is not defined for negative numbers");
