@@ -31,6 +31,8 @@
 #define GRASS_NAME		"models/vegetation.dae"
 #define BELL_NAME		"models/bell.dae"
 #define LAMP_NAME		"models/street_light.dae"
+#define MOON_NAME		"models/moon.dae"
+#define ZOMBIE_NAME		"models/carcass_eater.dae"
 // Textures to Load
 #define CASTLE_TEXTURE	"textures/yellow_brick.jpg"
 #define	GROUND_TEXTURE	"textures/grass.jpg"
@@ -38,6 +40,8 @@
 #define	GRASS_TEXTURE	"textures/grass.jpg"
 #define	BELL_TEXTURE	"textures/milk_brick.jpg"
 #define	LAMP_TEXTURE	"textures/metal.jpg"
+#define	MOON_TEXTURE	"textures/moon_texture.jpg"
+#define	ZOMBIE_TEXTURE	"textures/eater.jpg"
 // Sounds to Load
 //#define	AMBIENT			"sounds/475635__o-ciz__forest-windy.wav"
 
@@ -80,9 +84,9 @@ int width = 1120;
 int height = 630;
 // Models
 ModelData castle, ground, tower, bell;
-ModelData veg, lamp;
+ModelData veg, lamp, moon, zombie;
 // Textures
-unsigned int CASTLE_TEXTURE_tex, GROUND_tex, TOWER_TEXTURE_tex, GRASS_tex, BELL_tex, LAMP_tex;
+unsigned int CASTLE_TEXTURE_tex, GROUND_tex, TOWER_TEXTURE_tex, GRASS_tex, BELL_tex, LAMP_tex, MOON_tex, ZOMBIE_tex;
 // Buffers
 unsigned int VP_VBOs[14]; // vertex positions
 unsigned int VN_VBOs[14]; // vertex normals
@@ -213,6 +217,17 @@ void keyUp(unsigned char key, int x, int y) {
 	}
 }
 
+// Define a structure to hold spotlight properties
+struct Spotlight {
+	glm::vec3 position;
+	glm::vec3 direction;
+	float cutOff;
+	float outerCutOff;
+	glm::vec3 color;
+};
+
+Spotlight spotlights[4];
+
 // 3d Perspective
 mat4 persp_proj = perspective(45.0f, (float)width / (float)height, 0.1f, 1000.0f);
 // Loads Textures using ASSIMP
@@ -291,11 +306,11 @@ unsigned int load_tex(const char* file_name) {
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
 	unsigned char* data = stbi_load(file_name, &width, &height, &nrChannels, 0);
-	if (data){
+	if (data) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	else{
+	else {
 		std::cout << "Failed to load texture" << std::endl;
 	}
 	stbi_image_free(data);
@@ -411,6 +426,8 @@ void generateObjectBufferMesh() {
 	veg = load_mesh(GRASS_NAME);
 	bell = load_mesh(BELL_NAME, 5.0f);
 	lamp = load_mesh(LAMP_NAME);
+	moon = load_mesh(MOON_NAME);
+	zombie = load_mesh(ZOMBIE_NAME);
 	// load textures
 	CASTLE_TEXTURE_tex = load_tex(CASTLE_TEXTURE);
 	GROUND_tex = load_tex(GROUND_TEXTURE);
@@ -418,11 +435,34 @@ void generateObjectBufferMesh() {
 	GRASS_tex = load_tex(GRASS_TEXTURE);
 	BELL_tex = load_tex(BELL_TEXTURE);
 	LAMP_tex = load_tex(LAMP_TEXTURE);
+	MOON_tex = load_tex(MOON_TEXTURE);
+	ZOMBIE_tex = load_tex(ZOMBIE_TEXTURE);
 	// Generate Buffers
 	glGenBuffers(14, VP_VBOs); // position buffer
 	glGenBuffers(14, VN_VBOs); // normal buffer
 	glGenBuffers(14, VT_VBOs); // texture buffer
-	
+
+
+	// Scene - Moon
+	loc1[0] = glGetAttribLocation(shaderProgramID, "vertex_position");
+	loc1[1] = glGetAttribLocation(shaderProgramID, "vertex_normal");
+	loc1[2] = glGetAttribLocation(shaderProgramID, "vertex_texture");
+	glBindBuffer(GL_ARRAY_BUFFER, VP_VBOs[0]);
+	glBufferData(GL_ARRAY_BUFFER, moon.mPointCount * sizeof(vec3), &moon.mVertices[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VN_VBOs[0]);
+	glBufferData(GL_ARRAY_BUFFER, moon.mPointCount * sizeof(vec3), &moon.mNormals[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VT_VBOs[0]);
+	glBufferData(GL_ARRAY_BUFFER, moon.mPointCount * sizeof(vec2), &moon.mTextureCoords[0], GL_STATIC_DRAW);
+	// Scene - Zombie
+	loc1[3] = glGetAttribLocation(shaderProgramID, "vertex_position");
+	loc1[4] = glGetAttribLocation(shaderProgramID, "vertex_normal");
+	loc1[5] = glGetAttribLocation(shaderProgramID, "vertex_texture");
+	glBindBuffer(GL_ARRAY_BUFFER, VP_VBOs[1]);
+	glBufferData(GL_ARRAY_BUFFER, zombie.mPointCount * sizeof(vec3), &zombie.mVertices[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VN_VBOs[1]);
+	glBufferData(GL_ARRAY_BUFFER, zombie.mPointCount * sizeof(vec3), &zombie.mNormals[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, VT_VBOs[1]);
+	glBufferData(GL_ARRAY_BUFFER, zombie.mPointCount * sizeof(vec2), &zombie.mTextureCoords[0], GL_STATIC_DRAW);
 	// Scene - CASTLE
 	loc2[0] = glGetAttribLocation(shaderProgramID, "vertex_position");
 	loc2[1] = glGetAttribLocation(shaderProgramID, "vertex_normal");
@@ -491,13 +531,36 @@ void display() {
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthMask(GL_TRUE); //update the depth buffer
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f); // sky colour - same colour as fog
+	glClearColor(0.4f, 0.06f, 0.0f, 1.0f); // Darker scarlet color
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(shaderProgramID); 
+	glUseProgram(shaderProgramID);
 	// Declare your uniform variables that will be used in your shader
 	int matrix_location = glGetUniformLocation(shaderProgramID, "model");
 	int view_mat_location = glGetUniformLocation(shaderProgramID, "view");
 	int proj_mat_location = glGetUniformLocation(shaderProgramID, "proj");
+	// Additional Uniforms for lighting
+	int lightPos_location = glGetUniformLocation(shaderProgramID, "lightPos");
+	int viewPos_location = glGetUniformLocation(shaderProgramID, "viewPos");
+	int lightColor_location = glGetUniformLocation(shaderProgramID, "lightColor");
+
+	// Set light properties
+	glm::vec3 lightPos(-25.0f, 30.0f, -25.0f); // Change as needed
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f); // white light
+	spotlights[0] = { glm::vec3(2.2f, 4.0f, 2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)), glm::vec3(1.0f, 1.0f, 1.0f) };
+	spotlights[1] = { glm::vec3(2.2f, 4.0f, -2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)), glm::vec3(1.0f, 1.0f, 1.0f) };
+	spotlights[2] = { glm::vec3(-2.2f, 4.0f, 2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)), glm::vec3(1.0f, 1.0f, 1.0f) };
+	spotlights[3] = { glm::vec3(-2.2f, 4.0f, -2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)), glm::vec3(1.0f, 1.0f, 1.0f) };
+
+	// In your display function, pass the spotlight properties to the shader
+	for (int i = 0; i < 4; i++) {
+		std::string uniformName = "spotlights[" + std::to_string(i) + "]";
+		glUniform3fv(glGetUniformLocation(shaderProgramID, (uniformName + ".position").c_str()), 1, glm::value_ptr(spotlights[i].position));
+		glUniform3fv(glGetUniformLocation(shaderProgramID, (uniformName + ".direction").c_str()), 1, glm::value_ptr(spotlights[i].direction));
+		glUniform1f(glGetUniformLocation(shaderProgramID, (uniformName + ".cutOff").c_str()), spotlights[i].cutOff);
+		glUniform1f(glGetUniformLocation(shaderProgramID, (uniformName + ".outerCutOff").c_str()), spotlights[i].outerCutOff);
+		glUniform3fv(glGetUniformLocation(shaderProgramID, (uniformName + ".color").c_str()), 1, glm::value_ptr(spotlights[i].color));
+	}
+
 	// Camera / View transformation
 	glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
@@ -505,6 +568,46 @@ void display() {
 	// Update view and projection matrices in the shader
 	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, glm::value_ptr(projection));
+	// Pass them to the shader
+	glUniform3fv(lightPos_location, 1, glm::value_ptr(lightPos));
+	glUniform3fv(viewPos_location, 1, glm::value_ptr(cameraPos));
+	glUniform3fv(lightColor_location, 1, glm::value_ptr(lightColor));
+
+	// Moon
+	mat4 moon_model = identity_mat4();
+	moon_model = translate(moon_model, vec3(-5.2f, 6.2f, -5.2f));
+	moon_model = scale(moon_model, vec3(5.0f, 5.0f, 5.0f));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, moon_model.m);
+	glEnableVertexAttribArray(loc1[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, VP_VBOs[0]);
+	glVertexAttribPointer(loc1[0], 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(loc1[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, VN_VBOs[0]);
+	glVertexAttribPointer(loc1[1], 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(VAOs[0]);
+	glEnableVertexAttribArray(loc1[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, VT_VBOs[0]);
+	glVertexAttribPointer(loc1[2], 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindTexture(GL_TEXTURE_2D, MOON_tex);
+	glDrawArrays(GL_TRIANGLES, 0, moon.mPointCount);
+	// Zombie
+	mat4 zombie_model = identity_mat4();
+	zombie_model = rotate_y_deg(zombie_model, 180.0f); // Apply rotation
+	zombie_model = translate(zombie_model, vec3(-5.0f, 0.5f, 0.0f));
+	zombie_model = scale(zombie_model, vec3(1.0f, 1.0f, 1.0f));
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, zombie_model.m);
+	glEnableVertexAttribArray(loc1[3]);
+	glBindBuffer(GL_ARRAY_BUFFER, VP_VBOs[1]);
+	glVertexAttribPointer(loc1[3], 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(loc1[4]);
+	glBindBuffer(GL_ARRAY_BUFFER, VN_VBOs[1]);
+	glVertexAttribPointer(loc1[4], 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(VAOs[0]);
+	glEnableVertexAttribArray(loc1[5]);
+	glBindBuffer(GL_ARRAY_BUFFER, VT_VBOs[1]);
+	glVertexAttribPointer(loc1[5], 2, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindTexture(GL_TEXTURE_2D, ZOMBIE_tex);
+	glDrawArrays(GL_TRIANGLES, 0, zombie.mPointCount);
 	// Root - Scene - CASTLE
 	mat4 bg = identity_mat4();
 	bg = translate(bg, vec3(0.0f, -10.0f, 0.0f));
@@ -540,7 +643,7 @@ void display() {
 	glDrawArrays(GL_TRIANGLES, 0, ground.mPointCount);
 	// Child - Scene - bell
 	mat4 belltower = identity_mat4();
-	belltower = translate(belltower, vec3(0.0f, 0.0f, 0.0f));
+	belltower = translate(belltower, vec3(0.0f, 0.5f, 0.0f));
 	belltower = scale(belltower, vec3(3.0f, 3.0f, 3.0f)); // Add the scaling transformation here
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, belltower.m);
 	glEnableVertexAttribArray(loc2[6]);
@@ -585,7 +688,7 @@ void display() {
 
 	// Root - Scene - Vegetation
 	mat4 grass = identity_mat4();
-	grass = scale(grass, vec3(0.5f, 0.5f, 0.5f)); // Scale can be adjusted if needed
+	grass = scale(grass, vec3(0.2f, 0.2f, 0.2f)); // Scale can be adjusted if needed
 	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, grass.m);
 	glEnableVertexAttribArray(loc2[12]);
 	glBindBuffer(GL_ARRAY_BUFFER, VP_VBOs[12]);
@@ -603,9 +706,9 @@ void display() {
 
 	// Array of positions for kennel instances
 	vec3 kennelPositions[] = {
-		vec3( 11.0f, 0.0f, -11.0f),  // Original position
+		vec3(11.0f, 0.0f, -11.0f),  // Original position
 		vec3(-11.0f, 0.0f, -11.0f),  // top left position
-		vec3( 9.0f, 0.0f,  11.5f),  // bottom right position
+		vec3(9.0f, 0.0f,  11.5f),  // bottom right position
 		vec3(-12.0f, 0.0f,  11.0f)   // bottom left position
 	};
 
