@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<!--Write the xml file for three different types of person that will show up in the Paying process-->
+<!--In the class diagram we have pay in credit, pay in instalments and pay in debit that three ways to finish the process-->
+<!DOCTYPE PaymentSystem [ <!ELEMENT PaymentSystem (Pay*)>
+
+<!ELEMENT Pay (fund, Computecosts,  Pay_in_credit*, Pay_in_instalments*, Pay_in_debit*) > 
+<!ELEMENT fund   (#PCDATA)>
+<!ELEMENT Computecosts   (#PCDATA)>
+
+<!ELEMENT Pay_in_credit (series1, Computecost1, Log_Receipt*) >
+<!ELEMENT series1  (#PCDATA)>
+<!ELEMENT Computecost1 (#PCDATA)>
+
+<!ELEMENT Pay_in_instalments (series2, Computecost2, Log_Receipt*) >
+<!ELEMENT series2  (#PCDATA)>
+<!ELEMENT Computecost2   (#PCDATA)>
+
+<!ELEMENT Pay_in_debit (series3, Computecost3, Log_Receipt*) >
+<!ELEMENT series3  (#PCDATA)>
+<!ELEMENT Computecost3   (#PCDATA)>
+
+<!ELEMENT Log_Receipt (availability, customer_details, duedate, fees) >
+<!ELEMENT availability  (#PCDATA)>
+<!ELEMENT customer_details (#PCDATA)>
+<!ATTLIST customer_details new_member CDATA #IMPLIED>
+<!ELEMENT duedate (#PCDATA)>
+<!ELEMENT fees (#PCDATA)>
+ ]>
+<!--we do the declarion first in order to fit in the three types -->
+<!---->
+<PaymentSystem >
+
+  <Pay>
+      <fund> Sponsorship  </fund>
+        <Computecosts> 10000 <!-- euroes --> </Computecosts>
+  
+    <Pay_in_credit>
+      <series1> CreditPayment </series1>
+        <Computecost1> 13000 <!-- euroes -->  </Computecost1>
+  
+      <Log_Receipt>
+        <availability>Available</availability>
+        <customer_details new_member = "Frank Clarke"> Frank Clarke </customer_details>
+        <duedate>11/11/2022</duedate> <!--Add in the due day because of the type of the customer chose to pay is in credit-->
+        <fees amount = "13000">13000</fees>
+      </Log_Receipt>
+  
+    </Pay_in_credit>
+
+  </Pay>
+
+
+  <Pay>
+    <fund> Sponsorship </fund>
+    <Computecosts> 10000 <!-- euroes --> </Computecosts>
+
+    <Pay_in_instalments>
+      <series2> InstalmentsPayment </series2>
+      <Computecost2> 5000 <!-- euroes -->  </Computecost2>
+
+    <Log_Receipt>
+      <availability>Available</availability>
+      <customer_details>Frank Clarke</customer_details>
+      <duedate>11/11/2022</duedate><!--Add in the due day because of the type of the customer chose to pay is in instalments-->
+      <fees amount = "10000">5000 * 2</fees><!--Choosing instalments means the payment should separate into two equal pieces-->
+    </Log_Receipt>
+
+    </Pay_in_instalments>
+
+  </Pay>
+
+
+  <Pay>
+    <fund> Sponsorship </fund>
+    <Computecosts>10000</Computecosts>
+
+    <Pay_in_debit>
+      <series3> CreditPayment </series3>
+      <Computecost3> 8000 <!-- euroes -->  </Computecost3>
+
+    <Log_Receipt>
+      <availability>Unavailable</availability>
+      <customer_details new_member = "no">Frank Clarke</customer_details>
+      <duedate>NULL</duedate>
+      <fees amount = "-2000">-2000</fees><!--the shown fees are different because the customer didn't pay enough.-->
+    </Log_Receipt>
+
+    </Pay_in_debit>
+
+  </Pay>
+
+</PaymentSystem >

@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<!--Purpose: Describe the Record Payment class in order to show the whole process of recording the data to system-->
+<!--Declear all the elements that the following xml program is going to use-->
+<!DOCTYPE Record_Payment[
+<!ELEMENT Record_Payment (Fund, Name, recordPayment)>
+<!ELEMENT Fund  (#PCDATA)>
+<!ELEMENT Name (#PCDATA)>
+<!ELEMENT recordPayment (Payment_System*)>
+
+<!ELEMENT Payment_System (Data, Time, recordData, recordCustomer) >
+<!ELEMENT Data  (#PCDATA)>
+<!ATTLIST Data receipt_number CDATA #REQUIRED>
+<!ELEMENT Time (#PCDATA)>
+<!ELEMENT recordData (#PCDATA)>
+<!ELEMENT recordCustomer (#PCDATA)>
+<!ATTLIST recordCustomer details CDATA #REQUIRED>
+]>
+
+<Record_Payment>
+
+<Fund>SponsorshipFees 10,000</Fund>  <!--Add in the fees for Sponsorship-->
+  <Name>Frank Clarke</Name>          <!--Add in the customer name for the message that is going to record in to the system-->
+    <recordPayment>
+      <Payment_System>
+        <Data receipt_number = "No.00112"> Payment No.00112</Data>   <!--Generate the receipt number to record-->
+        <Time> 11/11/2021</Time>                                     <!--Record the time that Payment had succeed-->
+        <recordData amount = "13,000">13000</recordData>
+        <recordCustomer details = "Frank Clarke"> Frank Clarke </recordCustomer> <!--Add in the implied AttList in order to serve the Xquery's need-->
+      </Payment_System>
+    </recordPayment>
+
+</Record_Payment>   <!--End of the declaration-->

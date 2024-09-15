@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<!--Write the xml file for two different type of person that will show up in the payment system-->
+<!--In the class diagram we have customer and secretary actor-->
+<!DOCTYPE Persons [ <!ELEMENT Persons (Person*)>
+
+<!ELEMENT Person (Name, PhoneNumber, Address, Gender, Secretary*, Customer*) > 
+<!ELEMENT Name   (#PCDATA)>
+<!ELEMENT PhoneNumber   (#PCDATA)>
+<!ELEMENT Address   (#PCDATA)>
+<!ELEMENT Gender   (#PCDATA)>
+
+<!ELEMENT Secretary (EmployeeID, TextDescription) >
+<!ELEMENT EmployeeID  (#PCDATA)>
+<!ATTLIST EmployeeID status_level CDATA #IMPLIED>
+<!ELEMENT TextDescription   (#PCDATA)>
+
+<!ELEMENT Customer (name, phone, address, gender, fund) >
+<!ELEMENT name   (#PCDATA)>
+<!ELEMENT phone   (#PCDATA)>
+<!ELEMENT address   (#PCDATA)>
+<!ELEMENT gender   (#PCDATA)>
+<!ELEMENT fund   (#PCDATA)>
+ ]>
+<!--Secretary may have a status_level to show whether one employer is working or resting-->
+
+<Persons>
+
+  <Person>
+    <Name> Secretary No.99124 </Name>
+    <PhoneNumber> 0892166974 </PhoneNumber>
+    <Address> O'Connell Street </Address>
+    <Gender> Female </Gender>
+
+    <Secretary name = "Jack Clarke">
+      <EmployeeID status_level = "Working"> 169455075 </EmployeeID>   <!--showing the status of the employer-->
+      <TextDescription> Customer chose to pay for one year sponsorship for the club  </TextDescription> <!--Adding in a textual description-->
+    </Secretary>
+
+  </Person>
+
+  <Person>
+    <Name> Secretary No.99124 </Name> 
+    <PhoneNumber> 0892166974 </PhoneNumber>
+    <Address> O'Connell Street </Address>
+    <Gender> Female </Gender>  <!--different type of character have different type of information that we are going to record-->
+
+    <Customer>
+      <name>Frank Clarke</name>
+      <phone> 0897352414 </phone>
+      <address> Trinity </address>
+      <gender> Male</gender>
+      <fund> 13,000 euroes </fund> <!--for the customer, what matters is that how much that he already paid for the sponsorship and is there any instalments standing-->
+    </Customer>
+
+  </Person>
+
+</Persons>
